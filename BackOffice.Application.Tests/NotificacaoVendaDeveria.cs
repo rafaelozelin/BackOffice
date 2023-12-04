@@ -12,24 +12,31 @@ namespace BackOffice.Application.Tests
         [Fact]
         public void RetornarSucessoQuandoVendaValida()
         {
-            long codigo = 0;
+            long vendaId = 1;
 
             //Arrange
             var clienteService = new Mock<IClienteService>(MockBehavior.Strict);
             clienteService.Setup(service => service.CriaOuAtualiza(It.IsAny<ClienteNotificacaoVendaDto>()));
 
             var vendaService = new Mock<IVendaService>(MockBehavior.Strict);
-            vendaService.Setup(service => service.Criar(It.IsAny<NotificacaoVendaDto>())).Returns(1);
+            vendaService.Setup(service => service.Criar(It.IsAny<NotificacaoVendaDto>()))
+                .Returns(vendaId);
 
             var estoqueService = new Mock<IEstoqueService>(MockBehavior.Strict);
-            estoqueService.Setup(service => service.DecrementarEstoque(codigo, It.IsAny<IEnumerable<ProdutoNotificacaoVendaDto>>())).Returns(1);
+            estoqueService.Setup(service => service.DecrementarEstoque(It.IsAny<long>(), It.IsAny<IEnumerable<ProdutoNotificacaoVendaDto>>()))
+                .Returns(1);
 
-            var notaFiscalService = new Mock<INotaFiscalService>();
-            notaFiscalService.Setup(service => service.EmitirNFe(codigo)).Returns("bla bla bla");
+            var notaFiscalService = new Mock<INotaFiscalService>(MockBehavior.Strict);
+            notaFiscalService.Setup(service => service.EmitirNFe(vendaId))
+                .Returns("nfe34543");
 
-            var logisticaService = new Mock<ILogisticaService>();
-            logisticaService.Setup(service => service.SolicitarEnvio(codigo)).Returns(new SolicitacaoTransporteLogisticaDto());
-
+            var logisticaService = new Mock<ILogisticaService>(MockBehavior.Strict);
+            logisticaService.Setup(service => service.SolicitarEnvio(vendaId))
+                .Returns(new SolicitacaoTransporteLogisticaDto()
+            {
+                CodigoRastreio = "BR34334",
+                PrazoEntrega = DateOnly.FromDateTime(DateTime.Now.AddDays(3))
+            });
 
             var casoDeUso = new NotificacaoVendaUseCase(clienteService.Object,
                 vendaService.Object,
@@ -63,6 +70,12 @@ namespace BackOffice.Application.Tests
                 .BeOnOrAfter(hoje);
 
             vendaService.Verify(service => service.Criar(It.IsAny<NotificacaoVendaDto>()), Times.Once);
+
+            estoqueService.Verify(service => service.DecrementarEstoque(It.IsAny<long>(), It.IsAny<IEnumerable<ProdutoNotificacaoVendaDto>>()), Times.Once);
+
+            notaFiscalService.Verify(service => service.EmitirNFe(vendaId), Times.Once);
+
+            logisticaService.Verify(service => service.SolicitarEnvio(vendaId), Times.Once);
         }
     }
 }

@@ -40,12 +40,11 @@ namespace BackOffice.Application.UseCase
             // solicitar a entraga
             var dadosLogistica = _logisticaService.SolicitarEnvio(numeroVenda);
 
-
             return new RetornoNotificacaoVendaDto
             {
                 CodigoPedido = numeroVenda,
-                CodigoRastreio = dadosLogistica?.CodigoRastreio ?? "Rastreio",
-                PrazoEntrega = dadosLogistica?.PrazoEntrega ?? DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+                CodigoRastreio = dadosLogistica.CodigoRastreio,
+                PrazoEntrega = dadosLogistica.PrazoEntrega,
                 SituacaoPedido = SituacaoVenda.EmSeparacao
             };
         }
